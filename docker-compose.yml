@@ -29,7 +29,7 @@
       postgres:
         condition: service_healthy
     volumes:
-      - ./backend:/app
+      - ./backend:/app:Z
     networks:
       - radar
     restart: unless-stopped
@@ -74,7 +74,7 @@
     profiles:
       - full
     volumes:
-      - ./frontend:/app
+      - ./frontend:/app:Z
       - /app/node_modules
     networks:
       - radar
