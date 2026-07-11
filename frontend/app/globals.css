@@ -1,0 +1,139 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --valorant-red: #ff4655;
+  --valorant-red-glow: rgba(255, 70, 85, 0.45);
+  --valorant-bg: #0f1923;
+  --valorant-bg-elevated: #1a2332;
+  --valorant-bg-card: #111a24;
+  --valorant-border: #32383e;
+  --valorant-border-accent: #ff4655;
+  --valorant-text: #ece8e1;
+  --valorant-muted: #8b978f;
+  --valorant-cyan: #5ee7df;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: var(--valorant-bg);
+  color: var(--valorant-text);
+  background-image:
+    linear-gradient(135deg, rgba(255, 70, 85, 0.03) 0%, transparent 50%),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 80px,
+      rgba(255, 255, 255, 0.015) 80px,
+      rgba(255, 255, 255, 0.015) 81px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 80px,
+      rgba(255, 255, 255, 0.015) 80px,
+      rgba(255, 255, 255, 0.015) 81px
+    );
+  min-height: 100vh;
+}
+
+h1, h2, h3, .font-valorant {
+  font-family: 'Barlow Condensed', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+@layer components {
+  .valorant-card {
+    @apply relative overflow-hidden border border-[var(--valorant-border)] bg-[var(--valorant-bg-card)];
+    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .valorant-card:hover {
+    border-color: var(--valorant-red);
+    box-shadow: 0 0 24px var(--valorant-red-glow), inset 0 1px 0 rgba(255, 70, 85, 0.1);
+  }
+
+  .valorant-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, var(--valorant-red), transparent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .valorant-card:hover::before {
+    opacity: 1;
+  }
+
+  .valorant-btn {
+    @apply inline-flex items-center justify-center px-4 py-2 text-sm font-semibold uppercase tracking-wider;
+    font-family: 'Barlow Condensed', sans-serif;
+    clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+    transition: all 0.15s;
+  }
+
+  .valorant-btn-primary {
+    @apply valorant-btn bg-[var(--valorant-red)] text-white;
+  }
+
+  .valorant-btn-primary:hover {
+    background: #ff5563;
+    box-shadow: 0 0 16px var(--valorant-red-glow);
+  }
+
+  .valorant-btn-ghost {
+    @apply valorant-btn border border-[var(--valorant-border)] bg-transparent text-[var(--valorant-text)];
+  }
+
+  .valorant-btn-ghost:hover {
+    border-color: var(--valorant-red);
+    color: var(--valorant-red);
+  }
+
+  .valorant-input {
+    @apply w-full border border-[var(--valorant-border)] bg-[var(--valorant-bg-elevated)] px-3 py-2 text-[var(--valorant-text)] placeholder-[var(--valorant-muted)];
+    clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+  }
+
+  .valorant-input:focus {
+    outline: none;
+    border-color: var(--valorant-red);
+    box-shadow: 0 0 0 1px var(--valorant-red-glow);
+  }
+
+  .valorant-badge {
+    @apply inline-block px-2 py-0.5 text-xs font-semibold uppercase tracking-widest;
+    font-family: 'Barlow Condensed', sans-serif;
+    background: rgba(255, 70, 85, 0.15);
+    color: var(--valorant-red);
+    border: 1px solid rgba(255, 70, 85, 0.35);
+  }
+
+  .valorant-stat {
+    @apply valorant-card p-4;
+  }
+
+  .valorant-divider {
+    height: 2px;
+    background: linear-gradient(90deg, var(--valorant-red), transparent);
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--valorant-bg); }
+::-webkit-scrollbar-thumb { background: var(--valorant-border); }
+::-webkit-scrollbar-thumb:hover { background: var(--valorant-red); }

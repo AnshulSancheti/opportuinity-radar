@@ -1,0 +1,87 @@
+﻿services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: opportunity
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: opportunity_radar
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U opportunity -d opportunity_radar"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - radar
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://opportunity:password@postgres:5432/opportunity_radar
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    networks:
+      - radar
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'python -c "import urllib.request; urllib.request.urlopen(''http://localhost:8000/api/v1/health'')"',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 40s
+    command: ["sh", "/app/docker-entrypoint.sh"]
+
+  worker:
+    build: ./backend
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://opportunity:password@postgres:5432/opportunity_radar
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    profiles:
+      - full
+    networks:
+      - radar
+    command: ["sh", "/app/worker-entrypoint.sh"]
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+    depends_on:
+      backend:
+        condition: service_healthy
+    profiles:
+      - full
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - radar
+
+networks:
+  radar:
+    driver: bridge
+
+volumes:
+  postgres_data:

@@ -1,0 +1,115 @@
+news:
+  rss:
+  # Tech news
+    - source_name: TechCrunch
+      url: https://techcrunch.com/feed/
+    - source_name: The Verge
+      url: https://www.theverge.com/rss/index.xml
+    - source_name: Ars Technica
+      url: https://feeds.arstechnica.com/arstechnica/index
+    - source_name: Hacker News (Lobsters)
+      url: https://lobste.rs/rss
+  # AI / ML blogs
+    - source_name: OpenAI Blog
+      url: https://openai.com/blog/rss.xml
+    - source_name: Google AI Blog
+      url: https://blog.google/technology/ai/rss/
+    - source_name: Cloudflare Blog
+      url: https://blog.cloudflare.com/rss/
+    - source_name: GitHub Blog
+      url: https://github.blog/feed/
+    - source_name: AWS News Blog
+      url: https://aws.amazon.com/blogs/aws/feed/
+    - source_name: Meta Engineering
+      url: https://engineering.fb.com/feed/
+  hacker_news:
+    enabled: true
+  devto:
+    enabled: true
+
+jobs:
+  greenhouse:
+    # Global tech
+    - company: Stripe
+      board_token: stripe
+    - company: Figma
+      board_token: figma
+    - company: Discord
+      board_token: discord
+    - company: Airbnb
+      board_token: airbnb
+    - company: Databricks
+      board_token: databricks
+    - company: Coinbase
+      board_token: coinbase
+    - company: Reddit
+      board_token: reddit
+    - company: Spotify
+      board_token: spotify
+    - company: Cloudflare
+      board_token: cloudflare
+    - company: Datadog
+      board_token: datadog
+    # India-heavy presence
+    - company: Razorpay
+      board_token: razorpay
+    - company: Freshworks
+      board_token: freshworks
+    - company: Shopify
+      board_token: shopify
+    - company: Dropbox
+      board_token: dropbox
+    - company: MongoDB
+      board_token: mongodb
+    - company: Atlassian
+      board_token: atlassian
+    - company: Zscaler
+      board_token: zscaler
+    - company: PhonePe
+      board_token: phonepe
+    - company: Swiggy
+      board_token: swiggy
+    - company: Meesho
+      board_token: meesho
+  lever:
+    - company: Plaid
+      company_slug: plaid
+    - company: Netflix
+      company_slug: netflix
+    - company: Palantir
+      company_slug: palantir
+    - company: Canva
+      company_slug: canva
+    - company: Uber
+      company_slug: uber
+    - company: Lyft
+      company_slug: lyft
+  ashby:
+    - company: Notion
+      board_name: notion
+    - company: Ramp
+      board_name: ramp
+    - company: OpenAI
+      board_name: openai
+    - company: Anthropic
+      board_name: anthropic
+    - company: Linear
+      board_name: linear
+    - company: Deel
+      board_name: deel
+    - company: Vercel
+      board_name: vercel
+    - company: Retool
+      board_name: retool
+  workable:
+    - company: Hotjar
+      account_slug: hotjar
+  recruitee:
+    - company: Printify
+      subdomain: printify
+
+hackathons:
+  mlh:
+    enabled: true
+  static_list:
+    enabled: true
