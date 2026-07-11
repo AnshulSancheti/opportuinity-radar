@@ -1,11 +1,8 @@
 # Opportunity Radar — Implementation Progress
 
-> Living tracker aligned with the corrected implementation plan.
-
-**Project root:** `C:\Users\Ariyan\opportunity-radar`  
+> Living tracker aligned with the corrected implementation plan. 
 **Started:** 2026-07-05  
-**Last updated:** 2026-07-05  
-**GitHub:** https://github.com/Hollenite/opportunity-radar  
+**Last updated:** 2026-07-05 
 **Current milestone:** M8 — Complete (Valorant UI + expanded scrapers)
 
 ---
