@@ -2,6 +2,10 @@
 
 A news and hackathon discovery app with accounts, private saved collections, and a hackathon application tracker.
 
+**Production:** https://hackathons.intelligentape.online
+
+The production runtime is Cloudflare Workers + D1 + Queues + Cron Triggers. The Python/PostgreSQL backend remains available locally as the reference implementation and migration source.
+
 ## Problem and target users
 
 Students and developers follow several news sources and hackathon organizers. Useful articles and events get lost across tabs, and it is difficult to remember which hackathons they have already applied to.
@@ -18,20 +22,38 @@ Radar brings these feeds together. Each user can search news and hackathons, sav
 
 Save and applied statuses are independent and can both be removed. Old anonymous saved records are not assigned to newly registered users.
 
-## Stack and architecture
+## Production architecture
 
-- **Frontend:** Next.js 14, React, TypeScript, Tailwind CSS. Public feeds render on the server; account and collection views fetch with session credentials in the browser.
-- **API:** Python/FastAPI, Pydantic validation, SQLAlchemy.
-- **Persistence:** PostgreSQL 16; Alembic migrations run at backend startup.
-- **Ingestion:** configurable news feeds plus live MLH and Devpost hackathon listings, normalization, stable provider identities, and source/run logs. Redirects are followed; MLH structured JSON and Devpost paginated JSON are parsed. A source format failure is logged rather than replaced with synthetic events.
-- **Accounts:** salted scrypt password hashes; random opaque session cookies (HttpOnly, SameSite=Lax), stored as SHA-256 hashes in PostgreSQL. Sessions expire after seven days and are revoked on sign-out. Registration/login are throttled by email and IP over a 15-minute window. Browser mutations validate origins and require JSON bodies.
+- **Frontend:** Next.js 16 static export, React, TypeScript, Tailwind CSS. Cloudflare serves the assets; public feeds and private collections fetch from `/api/v1` on the same HTTPS origin.
+- **API:** TypeScript Worker in `cloudflare/`. Prepared D1 queries implement the public feeds, account/session endpoints, personal actions, source status, and operator controls.
+- **Database:** Cloudflare D1 (SQLite). Schema migrations live in `cloudflare/migrations/`.
+- **Ingestion:** Cron Triggers enqueue hackathon refreshes every six hours and news refreshes hourly. A Queue consumer processes them outside page requests. Database locks prevent concurrent or duplicate operator triggers. Failed hackathon refreshes retry after 15 minutes, up to the queue retry limit.
+- **Accounts:** salted scrypt hashes; opaque HttpOnly, Secure, SameSite=Lax cookies. Only session-token hashes are stored. Seven-day sessions are revoked on logout; authentication attempts are throttled by email and IP. Browser mutations reject foreign origins and require JSON where relevant.
+- **Migration:** existing Python password hashes remain valid and are upgraded to a lower-memory scrypt configuration on successful sign-in. Account IDs, item IDs, and saved/applied ownership are retained. Browser sessions are intentionally not copied: sign in again on the production domain.
 - **Ownership:** personal action reads and writes are scoped by the authenticated account on the API. A user cannot supply an owner ID to access someone else’s items.
 
-Jobs and job matching are retired from the active UI, API, and scraper runner. Existing job tables, migrations, and source modules remain for compatibility and preservation of earlier work. The old alerts feature is not exposed in this version.
+Jobs and job matching are retired from the active UI, API, and scraper runner. Their earlier source modules, PostgreSQL tables, and migrations remain locally for preservation. They are not part of the D1 runtime. The old alerts feature is not exposed.
 
-## Local setup
+## Cloudflare setup and deployment
 
-Requires Docker with Compose and Node.js 20+ / npm.
+```bash
+npm ci
+npm --prefix frontend ci
+npm run build
+npx wrangler d1 migrations apply opportunity-radar --remote
+npx wrangler secret put ADMIN_PASSWORD
+npx wrangler deploy
+```
+
+`wrangler.jsonc` defines the account, D1 binding, ingestion queue, custom domain, cron triggers, assets, and observability. For a fresh account, create the D1 database and queue first and replace their resource identifiers. Run migrations before deploying the Worker.
+
+For local Workers development, apply the migrations with `--local`, set a strong `ADMIN_PASSWORD` in an ignored `.dev.vars`, run `npm run build`, then `npm run dev:cloudflare`. Open http://localhost:8787, create an account, and trigger the initial ingestion through Admin.
+
+The one-time migration script `scripts/export-cloudflare.py` runs inside the original backend container. Its SQL output includes private account password hashes and must be redirected into an ignored, restricted file under `.radar/`. Never commit it, never serve it as an asset, and do not repeat an initial import against a populated database. The local PostgreSQL data is preserved.
+
+## Original Python/PostgreSQL setup
+
+Requires Docker with Compose and Node.js 24 / npm.
 
 ```bash
 cp .env.example .env  # only if .env does not exist
@@ -49,9 +71,9 @@ npm install
 npm run dev
 ```
 
-Keep the frontend terminal running. Stop services with `bash start.sh --stop` (or Ctrl+C for a manually launched frontend).
+For this original backend, set `NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1` in `frontend/.env.local` (the launcher writes it automatically). Keep the frontend terminal running. Stop services with `bash start.sh --stop` (or Ctrl+C for a manually launched frontend).
 
-## Configuration
+## Original backend configuration
 
 Use `.env.example` as a reference; never commit real credentials.
 
@@ -83,24 +105,24 @@ To use Admin, configure a strong `ADMIN_PASSWORD` in `.env`, recreate the backen
 ## Validation
 
 ```bash
-docker compose exec -T backend pytest -q
-cd frontend
-npx tsc --noEmit
+npm run typecheck
+npm run test:cloudflare
 npm run build
+python scripts/smoke-cloudflare.py http://localhost:8787
+# Original backend regression suite:
+docker compose exec -T backend pytest -q
 ```
 
-Account integration tests roll back their transactions. They cover registration, login/logout, expiration/revocation, duplicate registration, user isolation, save/unsave, applied/undo, invalid actions, anonymous denial, origin protection, throttling, and removal of job endpoints.
+The Workers tests cover existing password compatibility, current password hashing, provider/date parsing, safe URLs, RSS/Atom parsing, and stable identities. The HTTP smoke script uses disposable accounts to check registration, login/logout, ownership isolation, save/unsave, applied/undo, revoked sessions, validation, origin protection, and operator rejection. It writes exact account-cleanup SQL into `.radar/`; apply that to the corresponding test database after the run.
 
-## Deployment and limits
+The original backend integration tests roll back their transactions without retaining test accounts.
 
-The current verified deployment is local. No public deployment URL or demo recording is supplied yet.
-
-For hosting, provide PostgreSQL, run `alembic upgrade head`, serve the API and frontend with HTTPS, configure the public API URL and exact allowed frontend origin, set `API_ENV=production`, and use a strong operator passphrase. Host frontend and API on the same site (for example `radar.example.com` and `api.example.com`) for SameSite cookies. Do not expose PostgreSQL publicly. The included Compose configuration is for local development.
-
-Hackathon refresh runs in the API lifespan, checks freshness each minute, and starts ingestion when due. It does not require the legacy worker. On startup it refreshes missing/stale sources. News scheduling remains manual. For a scaled deployment, move periodic ingestion to a single dedicated scheduler.
+## Feed semantics and limits
 
 Discovery shows only live MLH/Devpost records fetched within the last 48 hours whose end date and any known registration deadline have not passed. Events missing from a complete successful refresh leave discovery. Source failures retain recent prior data and show the last successful fetch time. Manual seed records are retired as `unverified`; saved/applied records remain accessible.
 
-MLH event dates are the published ISO timestamps. Devpost submission ranges are calendar dates (normalized to UTC day boundaries for filtering), not claimed registration deadlines. Missing dates and metadata are not invented. Distinct annual editions may share an organizer website, so provider identities determine updates. Confirm registration requirements on the linked event website. Email verification and password-reset delivery are not implemented.
+MLH dates are its published ISO timestamps. Devpost submission ranges are calendar dates, normalized to UTC day boundaries for filtering. They are not registration deadlines. Missing metadata is not invented. Distinct annual editions may share a website, so provider identities determine updates. Confirm registration requirements on the linked event website.
 
-Sign-in state and private collections are fetched from the API with caching disabled. Passwords and session tokens are never placed in browser localStorage.
+News sources include the configured RSS/Atom publishers, Dev.to, and Hacker News. Individual source failures are recorded in Admin; other sources continue refreshing. External providers can change their formats or access policies, so inspect source status when a feed looks stale.
+
+Email verification, password reset, and a demo recording remain future work. Session state and private collections use caching-disabled requests. Passwords and session tokens are never placed in browser localStorage.

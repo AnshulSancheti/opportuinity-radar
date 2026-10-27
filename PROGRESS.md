@@ -20,11 +20,11 @@ Jobs and matching are removed from active navigation, API routes, scraper select
 
 ## Remaining delivery work
 
-- Public HTTPS deployment and evaluator access.
+- Public HTTPS deployment is configured at hackathons.intelligentape.online; verify the live deployment and API after each release.
 - Fresh news ingestion. Hackathon discovery now uses live sources and filters expired/stale events.
 - Demo recording and submission details.
 - Email verification/password-reset flows, if required by the intended deployment.
-- Automatic news scheduling remains outside the current implementation. Hackathons refresh automatically every six hours while the API runs.
+- Cloudflare Cron + Queues refresh news hourly and hackathons every six hours. The original local Python scheduler remains available separately.
 
 README describes local setup, architecture, configuration, workflows, and validation commands. Tests cover account ownership and session behavior without retaining test accounts in the database.
 
@@ -37,3 +37,12 @@ README describes local setup, architecture, configuration, workflows, and valida
 - Discovery excludes ended, registration-closed, stale (>48 hours), and source-withdrawn events.
 - Source labels, source links, last fetch time, and refresh status are visible.
 - Saved/applied history survives expiration, retirement, and source removal.
+
+## Cloudflare runtime
+
+- Static frontend assets and same-origin TypeScript API hosted on Workers.
+- D1 migrations plus one-time import preserving account/item IDs and personal actions.
+- Existing password-hash compatibility, secure cookies, revocable sessions, throttling, and account isolation.
+- Queue-based ingestion with cron triggers and a database lock shared by scheduled/operator runs.
+- Private migration files and operator secrets remain ignored; local PostgreSQL is preserved.
+- Dedicated unit tests and a reusable HTTP account-workflow smoke test.

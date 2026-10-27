@@ -48,3 +48,8 @@ backups/
 # Playwright (later)
 playwright-report/
 test-results/
+
+# Cloudflare local state and secrets
+.wrangler/
+.dev.vars
+.dev.vars.*

@@ -1,0 +1,22 @@
+{
+  "name": "opportunity-radar-cloudflare",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "NEXT_PUBLIC_API_URL=/api/v1 npm --prefix frontend run build",
+    "dev:cloudflare": "wrangler dev",
+    "deploy": "npm run build && wrangler deploy",
+    "typecheck": "tsc --noEmit -p cloudflare/tsconfig.json",
+    "test:cloudflare": "tsx --test cloudflare/*.test.ts"
+  },
+  "dependencies": {
+    "fast-xml-parser": "^5.11.2"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261027.1",
+    "@types/node": "^26.6.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "wrangler": "^4.154.0"
+  }
+}
