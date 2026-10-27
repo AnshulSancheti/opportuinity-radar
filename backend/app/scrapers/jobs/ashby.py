@@ -5,7 +5,11 @@ from sqlalchemy.orm import Session
 from app.scrapers.base import BaseScraper
 from app.services.job_service import upsert_job
 from app.services.cleaner import clean_text
-from app.services.job_search import infer_employment_type, normalize_remote_type
+from app.services.job_search import (
+    infer_employment_type,
+    infer_experience_level,
+    normalize_remote_type,
+)
 
 
 class AshbyScraper(BaseScraper):
@@ -49,6 +53,7 @@ class AshbyScraper(BaseScraper):
                 "location": location,
                 "remote_type": remote_type,
                 "employment_type": infer_employment_type(title, employment),
+                "experience_level": infer_experience_level(title, employment),
                 "source_name": self.source_name,
                 "source_url": job.get("jobUrl"),
                 "apply_url": job.get("applyUrl") or job.get("jobUrl"),

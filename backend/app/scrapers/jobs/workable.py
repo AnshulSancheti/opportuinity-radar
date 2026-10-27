@@ -3,7 +3,11 @@ from sqlalchemy.orm import Session
 from app.scrapers.base import BaseScraper
 from app.services.job_service import upsert_job
 from app.services.cleaner import clean_text
-from app.services.job_search import infer_employment_type, normalize_remote_type
+from app.services.job_search import (
+    infer_employment_type,
+    infer_experience_level,
+    normalize_remote_type,
+)
 
 
 class WorkableScraper(BaseScraper):
@@ -31,6 +35,7 @@ class WorkableScraper(BaseScraper):
                 "location": location,
                 "remote_type": normalize_remote_type(location, is_remote_flag=bool(job.get("telecommuting"))),
                 "employment_type": infer_employment_type(title, job.get("employment_type")),
+                "experience_level": infer_experience_level(title, job.get("employment_type")),
                 "source_name": self.source_name,
                 "source_url": job.get("url") or f"https://apply.workable.com/{self.account_slug}/j/{job.get('shortcode')}",
                 "apply_url": job.get("application_url") or job.get("url"),

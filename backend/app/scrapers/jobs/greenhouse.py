@@ -2,7 +2,11 @@ from sqlalchemy.orm import Session
 
 from app.scrapers.base import BaseScraper
 from app.services.job_service import upsert_job
-from app.services.job_search import infer_employment_type, normalize_remote_type
+from app.services.job_search import (
+    infer_employment_type,
+    infer_experience_level,
+    normalize_remote_type,
+)
 
 
 class GreenhouseScraper(BaseScraper):
@@ -28,6 +32,7 @@ class GreenhouseScraper(BaseScraper):
                 "location": location,
                 "remote_type": normalize_remote_type(location),
                 "employment_type": infer_employment_type(title),
+                "experience_level": infer_experience_level(title),
                 "source_name": self.source_name,
                 "source_url": job.get("absolute_url"),
                 "apply_url": job.get("absolute_url"),

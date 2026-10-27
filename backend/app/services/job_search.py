@@ -10,6 +10,18 @@ from app.models import Job
 
 INTERN_PATTERN = re.compile(r"\b(internship|intern|co-?op)\b", re.IGNORECASE)
 
+# Seniority ladders, most senior first — the first hit wins, so ordering
+# matters: "Senior Staff Engineer" should resolve to staff, not senior.
+_LEVEL_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
+    ("executive", re.compile(r"\b(vp|vice president|head of|director|chief|cto|ceo)\b", re.I)),
+    ("principal", re.compile(r"\b(principal|distinguished|fellow|architect)\b", re.I)),
+    ("staff", re.compile(r"\b(staff|senior staff)\b", re.I)),
+    ("lead", re.compile(r"\b(lead|manager|tech lead|team lead)\b", re.I)),
+    ("senior", re.compile(r"\b(senior|snr|sr\.?|iii|iv)\b", re.I)),
+    ("mid", re.compile(r"\b(ii|mid[\s-]?level)\b", re.I)),
+    ("junior", re.compile(r"\b(junior|jr\.?|associate|entry[\s-]?level|new\s*grad|graduate|trainee|apprentice|i)\b", re.I)),
+]
+
 
 def normalize_remote_type(
     location: str | None,
@@ -47,6 +59,27 @@ def infer_employment_type(title: str | None, commitment: str | None = None) -> s
         return "Contract"
     if "full-time" in t or "full time" in t:
         return "Full-time"
+    return None
+
+
+def infer_experience_level(title: str | None, employment_type: str | None = None) -> str | None:
+    """Infer a seniority level from the job title.
+
+    Greenhouse's public board API returns neither employment type nor level, so
+    for most postings the title is the only signal available. Returns None when
+    the title carries no ladder marker rather than guessing "mid" — an unknown
+    level and a genuinely mid-level role are different facts, and the matching
+    agent needs to tell them apart.
+    """
+    if employment_type and INTERN_PATTERN.search(employment_type):
+        return "internship"
+
+    t = title or ""
+    if INTERN_PATTERN.search(t):
+        return "internship"
+    for level, pattern in _LEVEL_PATTERNS:
+        if pattern.search(t):
+            return level
     return None
 
 

@@ -175,6 +175,49 @@ class AlertRule(Base):
     deliveries: Mapped[list["AlertDelivery"]] = relationship(back_populates="rule")
 
 
+class CandidateProfile(Base):
+    """The resume the matching agent scores jobs against. Single active row."""
+
+    __tablename__ = "candidate_profiles"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    label: Mapped[str] = mapped_column(Text, nullable=False, default="default")
+    resume_text: Mapped[str] = mapped_column(Text, nullable=False)
+    preferences: Mapped[str | None] = mapped_column(Text)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    matches: Mapped[list["JobMatch"]] = relationship(back_populates="profile")
+
+
+class JobMatch(Base):
+    """One agent verdict for a (job, profile) pair. Re-scoring replaces the row."""
+
+    __tablename__ = "job_matches"
+    __table_args__ = (UniqueConstraint("job_id", "profile_id"),)
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    job_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("jobs.id", ondelete="CASCADE"), nullable=False)
+    profile_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("candidate_profiles.id", ondelete="CASCADE"), nullable=False
+    )
+    score: Mapped[int] = mapped_column(Integer, nullable=False)
+    verdict: Mapped[str] = mapped_column(Text, nullable=False)
+    reasoning: Mapped[str] = mapped_column(Text, nullable=False)
+    matched_skills: Mapped[list[str]] = mapped_column(ARRAY(Text), default=list)
+    missing_skills: Mapped[list[str]] = mapped_column(ARRAY(Text), default=list)
+    closing_move: Mapped[str | None] = mapped_column(Text)
+    model: Mapped[str] = mapped_column(Text, nullable=False)
+    input_tokens: Mapped[int | None] = mapped_column(Integer)
+    output_tokens: Mapped[int | None] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    job: Mapped[Job] = relationship()
+    profile: Mapped[CandidateProfile] = relationship(back_populates="matches")
+
+
 class AlertDelivery(Base):
     __tablename__ = "alert_deliveries"
     __table_args__ = (UniqueConstraint("rule_id", "item_type", "item_id"),)

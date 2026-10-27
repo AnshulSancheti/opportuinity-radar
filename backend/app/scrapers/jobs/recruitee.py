@@ -3,7 +3,11 @@ from sqlalchemy.orm import Session
 from app.scrapers.base import BaseScraper
 from app.services.job_service import upsert_job
 from app.services.cleaner import clean_text
-from app.services.job_search import infer_employment_type, normalize_remote_type
+from app.services.job_search import (
+    infer_employment_type,
+    infer_experience_level,
+    normalize_remote_type,
+)
 
 
 class RecruiteeScraper(BaseScraper):
@@ -30,6 +34,7 @@ class RecruiteeScraper(BaseScraper):
                 "location": location,
                 "remote_type": normalize_remote_type(location, is_remote_flag=bool(job.get("remote"))),
                 "employment_type": infer_employment_type(title, employment),
+                "experience_level": infer_experience_level(title, employment),
                 "source_name": self.source_name,
                 "source_url": job.get("careers_url") or job.get("url"),
                 "apply_url": job.get("careers_apply_url") or job.get("url"),

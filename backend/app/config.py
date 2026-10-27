@@ -25,6 +25,16 @@ class Settings(BaseSettings):
     telegram_bot_token: str = ""
     telegram_chat_id: str = ""
 
+    # Job matching agent. Empty api key disables the feature; endpoints then
+    # return 503 and the rest of the app is unaffected.
+    anthropic_api_key: str = ""
+    match_model: str = "claude-haiku-4-5"
+    match_batch_limit: int = 25
+
+    @property
+    def matching_enabled(self) -> bool:
+        return bool(self.anthropic_api_key)
+
 
 @lru_cache
 def get_settings() -> Settings:

@@ -4,7 +4,12 @@ from app.services.cleaner import canonicalize_url, make_content_hash, remove_tra
 from app.services.categorizer import categorize
 from app.services.skill_extractor import extract_skills
 from app.services.date_parser import parse_date
-from app.services.job_search import infer_employment_type, normalize_remote_type, build_job_text_conditions
+from app.services.job_search import (
+    build_job_text_conditions,
+    infer_employment_type,
+    infer_experience_level,
+    normalize_remote_type,
+)
 
 
 def test_remove_tracking_params():
@@ -55,3 +60,35 @@ def test_normalize_remote_type():
 def test_build_job_text_conditions_intern_expansion():
     conditions = build_job_text_conditions("internship")
     assert len(conditions) >= 7
+
+
+def test_infer_experience_level_ladder():
+    assert infer_experience_level("Software Engineer Intern") == "internship"
+    assert infer_experience_level("Junior Backend Developer") == "junior"
+    assert infer_experience_level("Software Engineer II") == "mid"
+    assert infer_experience_level("Senior Software Engineer") == "senior"
+    assert infer_experience_level("Staff Software Engineer") == "staff"
+    assert infer_experience_level("Principal Engineer") == "principal"
+    assert infer_experience_level("Director of Engineering") == "executive"
+
+
+def test_infer_experience_level_prefers_more_senior_marker():
+    # "Senior Staff" is a staff-level role, not a senior-level one.
+    assert infer_experience_level("Senior Staff Software Engineer") == "staff"
+
+
+def test_infer_experience_level_unknown_is_none():
+    # An unmarked title is genuinely unknown; guessing "mid" would be a lie the
+    # matching agent then reasons from.
+    assert infer_experience_level("Software Engineer") is None
+    assert infer_experience_level("Backend Developer") is None
+    assert infer_experience_level(None) is None
+
+
+def test_infer_experience_level_does_not_match_intern_inside_internal():
+    assert infer_experience_level("Senior Internal Tools Engineer") == "senior"
+
+
+def test_infer_experience_level_ai_is_not_level_one():
+    # "AI" must not trip the standalone-"I" junior marker.
+    assert infer_experience_level("AI Engineer") is None

@@ -31,6 +31,10 @@ def upsert_job(db: Session, data: dict) -> str:
         existing.location = data.get("location")
         existing.remote_type = data.get("remote_type")
         existing.employment_type = data.get("employment_type")
+        # Refreshed on update so a rescrape backfills rows that predate
+        # experience-level inference instead of leaving them null forever.
+        if data.get("experience_level"):
+            existing.experience_level = data.get("experience_level")
         if data.get("date_posted"):
             existing.date_posted = data.get("date_posted")
         existing.skills = skills
