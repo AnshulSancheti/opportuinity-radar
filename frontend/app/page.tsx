@@ -1,5 +1,6 @@
+"use client";
+import { useFeed } from "@/lib/useFeed";
 import Link from "next/link";
-import { apiGet } from "@/lib/api";
 import type { Article, Hackathon, Paginated, Stats } from "@/lib/types";
 import { PageHeader } from "@/components/PageHeader";
 import { StatCard } from "@/components/StatCard";
@@ -7,27 +8,17 @@ import { Badge } from "@/components/Badge";
 import { ArticleThumbnail } from "@/components/ArticleThumbnail";
 import { ErrorState } from "@/components/States";
 
-export default async function HomePage() {
-  let stats: Stats | null = null;
-  let news: Paginated<Article> | null = null;
-  let hacks: Paginated<Hackathon> | null = null;
-  let error = false;
-
-  try {
-    [stats, news, hacks] = await Promise.all([
-      apiGet<Stats>("/admin/stats"),
-      apiGet<Paginated<Article>>("/news?limit=5"),
-      apiGet<Paginated<Hackathon>>("/hackathons?limit=5"),
-    ]);
-  } catch {
-    error = true;
-  }
-
+export default function HomePage() {
+  const { data: stats, error: statsError, loading } = useFeed<Stats>("/admin/stats");
+  const { data: news, error: newsError } = useFeed<Paginated<Article>>("/news?limit=5");
+  const { data: hacks, error: hacksError } = useFeed<Paginated<Hackathon>>("/hackathons?limit=5");
+  const error = statsError || newsError || hacksError;
+  if (loading) return <p role="status">Loading dashboard…</p>;
   if (error) {
     return (
       <>
         <PageHeader title="Dashboard" subtitle="System status" />
-        <ErrorState message="API unavailable — start backend with ./start.sh" />
+        <ErrorState message="Unable to load the dashboard. Please try again shortly." />
       </>
     );
   }

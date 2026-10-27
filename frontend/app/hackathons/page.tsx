@@ -1,4 +1,7 @@
-import { apiGet } from "@/lib/api";
+"use client";
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { useFeed } from "@/lib/useFeed";
 import type { Hackathon, Paginated } from "@/lib/types";
 import { ActionButtons } from "@/components/ActionButtons";
 import { FilterSelect, LoadMoreLink, MODE_OPTIONS } from "@/components/FilterBar";
@@ -10,11 +13,11 @@ type SourceStatus = { sources: { name: string; last_success_at: string | null; s
 
 const PAGE_SIZE = 50;
 
-export default async function HackathonsPage({
-  searchParams,
-}: {
-  searchParams: { q?: string; mode?: string; source?: string; offset?: string };
-}) {
+export default function HackathonsPage() {
+  return <Suspense fallback={<p role="status">Loading hackathons…</p>}><HackathonsFeed /></Suspense>;
+}
+function HackathonsFeed() {
+  const searchParams = Object.fromEntries(useSearchParams().entries());
   const offset = Math.max(0, parseInt(searchParams.offset || "0", 10) || 0);
   const params = new URLSearchParams();
   if (searchParams.q) params.set("q", searchParams.q);
@@ -23,17 +26,8 @@ export default async function HackathonsPage({
   params.set("limit", String(PAGE_SIZE));
   params.set("offset", String(offset));
 
-  let data: Paginated<Hackathon> | null = null;
-  let error = false;
-  let freshness: SourceStatus | null = null;
-  try {
-    [data, freshness] = await Promise.all([
-      apiGet<Paginated<Hackathon>>(`/hackathons?${params}`),
-      apiGet<SourceStatus>("/hackathons/sources"),
-    ]);
-  } catch {
-    error = true;
-  }
+  const { data, error, loading } = useFeed<Paginated<Hackathon>>(`/hackathons?${params}`);
+  const { data: freshness } = useFeed<SourceStatus>("/hackathons/sources");
 
   const nextParams = new URLSearchParams(params);
   nextParams.set("offset", String(offset + PAGE_SIZE));
@@ -62,8 +56,9 @@ export default async function HackathonsPage({
         <button type="submit" className="valorant-btn-primary">Filter</button>
       </form>
 
+      {loading && <p role="status">Loading hackathons…</p>}
       {error && <ErrorState message="Failed to load hackathons" />}
-      {!error && data?.items.length === 0 && <EmptyState message="No open or upcoming hackathons match these filters." />}
+      {!loading && !error && data?.items.length === 0 && <EmptyState message="No open or upcoming hackathons match these filters." />}
 
       <div className="grid gap-4 md:grid-cols-2">
         {data?.items.map((h) => (

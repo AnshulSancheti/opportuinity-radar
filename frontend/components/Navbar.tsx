@@ -15,7 +15,7 @@ const links = [
 ];
 
 export default function Navbar() {
-  const pathname = usePathname();
+  const pathname = usePathname().replace(/\/$/, "") || "/";
   const router = useRouter();
   const { user, loading, logout } = useAuth();
   const [error, setError] = useState("");

@@ -55,8 +55,6 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!authed) return;
-    loadRuns();
-    loadStatus();
     const id = setInterval(() => {
       loadRuns();
       loadStatus();
@@ -110,9 +108,10 @@ export default function AdminPage() {
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="From ADMIN_PASSWORD in .env"
+          placeholder="Operator passphrase"
           className="valorant-input max-w-sm"
         />
+        <button disabled={!authed} onClick={() => { void loadRuns(); void loadStatus(); }} className="valorant-btn-ghost ml-3 disabled:opacity-50">Load run history</button>
       </div>
 
       {error && <ErrorState message={error} />}

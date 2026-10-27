@@ -1,4 +1,7 @@
-import { apiGet } from "@/lib/api";
+"use client";
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { useFeed } from "@/lib/useFeed";
 import type { Article, Paginated } from "@/lib/types";
 import { ActionButtons } from "@/components/ActionButtons";
 import { ArticleThumbnail } from "@/components/ArticleThumbnail";
@@ -14,11 +17,11 @@ const CATEGORY_OPTIONS = [
   ...NEWS_CATEGORIES.map((c) => ({ value: c, label: c })),
 ];
 
-export default async function NewsPage({
-  searchParams,
-}: {
-  searchParams: { q?: string; category?: string; source?: string; offset?: string };
-}) {
+export default function NewsPage() {
+  return <Suspense fallback={<p role="status">Loading news…</p>}><NewsFeed /></Suspense>;
+}
+function NewsFeed() {
+  const searchParams = Object.fromEntries(useSearchParams().entries());
   const offset = Math.max(0, parseInt(searchParams.offset || "0", 10) || 0);
   const params = new URLSearchParams();
   if (searchParams.q) params.set("q", searchParams.q);
@@ -27,13 +30,7 @@ export default async function NewsPage({
   params.set("limit", String(PAGE_SIZE));
   params.set("offset", String(offset));
 
-  let data: Paginated<Article> | null = null;
-  let error = false;
-  try {
-    data = await apiGet<Paginated<Article>>(`/news?${params}`);
-  } catch {
-    error = true;
-  }
+  const { data, error, loading } = useFeed<Paginated<Article>>(`/news?${params}`);
 
   const nextParams = new URLSearchParams(params);
   nextParams.set("offset", String(offset + PAGE_SIZE));
@@ -56,8 +53,9 @@ export default async function NewsPage({
         <button type="submit" className="valorant-btn-primary">Search</button>
       </form>
 
+      {loading && <p role="status">Loading news…</p>}
       {error && <ErrorState message="Failed to load news" />}
-      {!error && data?.items.length === 0 && <EmptyState message="No articles — run news scraper" />}
+      {!loading && !error && data?.items.length === 0 && <EmptyState message="No articles — run news scraper" />}
 
       <div className="grid gap-4">
         {data?.items.map((a) => (
