@@ -1,20 +1,31 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/components/AuthProvider";
+import { useState } from "react";
 
 const links = [
   { href: "/", label: "Dashboard" },
   { href: "/news", label: "News" },
-  { href: "/jobs", label: "Jobs" },
   { href: "/hackathons", label: "Hackathons" },
   { href: "/saved", label: "Saved" },
-  { href: "/alerts", label: "Alerts" },
+  { href: "/applied", label: "Applied" },
   { href: "/admin", label: "Admin" },
 ];
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, loading, logout } = useAuth();
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const signOut = async () => {
+    setBusy(true); setError("");
+    try { await logout(); router.push("/"); router.refresh(); }
+    catch { setError("Sign out failed. Please retry."); }
+    finally { setBusy(false); }
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--valorant-border)] bg-[#0a1219]/95 backdrop-blur-md">
@@ -48,6 +59,11 @@ export default function Navbar() {
               </Link>
             );
           })}
+          {loading ? <span className="p-2 text-xs">Loading account…</span> : user ? <>
+            <span className="p-2 text-xs text-white">{user.name}</span>
+            <button disabled={busy} onClick={signOut} className="valorant-btn-ghost text-xs">{busy ? "Signing out…" : "Sign out"}</button>
+          </> : <Link href="/login" className="valorant-btn-primary text-xs">Sign in / Create account</Link>}
+          {error && <span role="alert" className="text-xs text-red-400">{error}</span>}
         </nav>
       </div>
       <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-[var(--valorant-red)] to-transparent opacity-60" />

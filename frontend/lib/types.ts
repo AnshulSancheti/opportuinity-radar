@@ -19,20 +19,6 @@ export interface Article {
   image_url: string | null;
 }
 
-export interface Job {
-  id: number;
-  title: string;
-  company: string;
-  location: string | null;
-  remote_type: string | null;
-  employment_type: string | null;
-  skills: string[];
-  apply_url: string | null;
-  source_name: string;
-  date_posted: string | null;
-  status: string;
-}
-
 export interface Hackathon {
   id: number;
   name: string;
@@ -50,7 +36,6 @@ export interface Hackathon {
 }
 
 export interface Stats {
-  total_jobs: number;
   total_articles: number;
   total_hackathons: number;
   last_scrape_at: string | null;

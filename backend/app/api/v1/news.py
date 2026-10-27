@@ -5,19 +5,10 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Article, UserAction
+from app.models import Article
 from app.schemas import ArticleResponse, PaginatedResponse
 
 router = APIRouter()
-
-
-def hidden_article_ids(db: Session) -> set[int]:
-    rows = db.scalars(
-        select(UserAction.item_id).where(
-            UserAction.item_type == "article", UserAction.action == "hidden"
-        )
-    ).all()
-    return set(rows)
 
 
 @router.get("", response_model=PaginatedResponse[ArticleResponse])
@@ -28,7 +19,6 @@ def list_news(
     source: str | None = None,
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
-    include_hidden: bool = False,
 ) -> PaginatedResponse[ArticleResponse]:
     query = select(Article)
     if q:
@@ -39,10 +29,6 @@ def list_news(
         query = query.where(Article.category == category)
     if source:
         query = query.where(Article.source_name.ilike(f"%{source}%"))
-    if not include_hidden:
-        hidden = hidden_article_ids(db)
-        if hidden:
-            query = query.where(Article.id.not_in(hidden))
 
     total = db.scalar(select(func.count()).select_from(query.subquery())) or 0
     articles = db.scalars(

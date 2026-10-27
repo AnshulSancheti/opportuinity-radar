@@ -1,24 +1,17 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
-export async function apiGet<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, { cache: "no-store" });
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
+export class ApiError extends Error {
+  constructor(public status: number, message: string) { super(message); }
+}
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const res = await fetch(`${API_URL}${path}`, { cache: "no-store", credentials: "include", ...options });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    const detail = typeof data.detail === "string" ? data.detail : Array.isArray(data.detail) ? data.detail.map((e: { msg: string }) => e.msg).join(". ") : "Request failed. Please try again.";
+    throw new ApiError(res.status, detail);
+  }
   return res.json();
 }
-
-export async function apiPost<T>(path: string, body: unknown, headers?: Record<string, string>): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...headers },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
-  return res.json();
-}
-
-export async function apiDelete(path: string): Promise<void> {
-  const res = await fetch(`${API_URL}${path}`, { method: "DELETE" });
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
-}
-
-export { API_URL };
+export const apiGet = <T>(path: string) => request<T>(path);
+export const apiPost = <T>(path: string, body: unknown, headers?: Record<string, string>) => request<T>(path, { method: "POST", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify(body) });
+export const apiDelete = (path: string) => request(path, { method: "DELETE" });

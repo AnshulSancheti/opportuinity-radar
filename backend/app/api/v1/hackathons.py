@@ -3,19 +3,10 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Hackathon, UserAction
+from app.models import Hackathon
 from app.schemas import HackathonResponse, PaginatedResponse
 
 router = APIRouter()
-
-
-def hidden_hackathon_ids(db: Session) -> set[int]:
-    rows = db.scalars(
-        select(UserAction.item_id).where(
-            UserAction.item_type == "hackathon", UserAction.action == "hidden"
-        )
-    ).all()
-    return set(rows)
 
 
 @router.get("", response_model=PaginatedResponse[HackathonResponse])
@@ -27,7 +18,6 @@ def list_hackathons(
     status: str = "active",
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
-    include_hidden: bool = False,
 ) -> PaginatedResponse[HackathonResponse]:
     query = select(Hackathon).where(Hackathon.status == status)
     if q:
@@ -38,10 +28,6 @@ def list_hackathons(
         query = query.where(Hackathon.mode == mode)
     if theme:
         query = query.where(Hackathon.themes.any(theme))
-    if not include_hidden:
-        hidden = hidden_hackathon_ids(db)
-        if hidden:
-            query = query.where(Hackathon.id.not_in(hidden))
 
     total = db.scalar(select(func.count()).select_from(query.subquery())) or 0
     hacks = db.scalars(

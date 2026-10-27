@@ -5,15 +5,17 @@ import { API_URL } from "@/lib/api";
 import type { ScrapeRun } from "@/lib/types";
 import { PageHeader } from "@/components/PageHeader";
 import { Badge } from "@/components/Badge";
+import { useAuth } from "@/components/AuthProvider";
+import Link from "next/link";
 import { ErrorState } from "@/components/States";
 
 const MODULES = [
   { id: "news", label: "News", hint: "RSS, HN, Dev.to" },
-  { id: "jobs", label: "Jobs", hint: "Greenhouse, Lever, Ashby…" },
   { id: "hackathons", label: "Hackathons", hint: "Curated + MLH" },
 ] as const;
 
 export default function AdminPage() {
+  const { user, loading } = useAuth();
   const [password, setPassword] = useState("");
   const [runs, setRuns] = useState<ScrapeRun[]>([]);
   const [activeScrapes, setActiveScrapes] = useState<string[]>([]);
@@ -27,14 +29,15 @@ export default function AdminPage() {
     if (!authed) return;
     try {
       const res = await fetch(`${API_URL}/admin/scrape-runs`, {
+        credentials: "include",
         headers: { "X-Admin-Password": password },
         cache: "no-store",
       });
-      if (!res.ok) throw new Error("Unauthorized");
+      if (!res.ok) { const data = await res.json().catch(() => ({})); throw new Error(data.detail || "Unable to load runs"); }
       setRuns(await res.json());
       setError("");
-    } catch {
-      setError("Invalid admin password");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unable to load runs");
       setRuns([]);
     }
   }, [authed, password]);
@@ -67,6 +70,7 @@ export default function AdminPage() {
     try {
       const res = await fetch(`${API_URL}/admin/run-scraper`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
           "X-Admin-Password": password,
@@ -90,6 +94,9 @@ export default function AdminPage() {
       setBusy(null);
     }
   };
+
+  if (loading) return <p>Loading account…</p>;
+  if (!user) return <Link href="/login" className="valorant-btn-primary">Sign in to access admin controls</Link>;
 
   return (
     <div className="space-y-6">
@@ -115,7 +122,7 @@ export default function AdminPage() {
           <h2 className="mb-4 font-valorant text-sm font-bold tracking-widest text-[var(--valorant-red)]">
             Run scrapers
           </h2>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             {MODULES.map((m) => {
               const running = activeScrapes.includes(m.id);
               return (

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { apiGet } from "@/lib/api";
-import type { Article, Hackathon, Job, Paginated, Stats } from "@/lib/types";
+import type { Article, Hackathon, Paginated, Stats } from "@/lib/types";
 import { PageHeader } from "@/components/PageHeader";
 import { StatCard } from "@/components/StatCard";
 import { Badge } from "@/components/Badge";
@@ -10,15 +10,13 @@ import { ErrorState } from "@/components/States";
 export default async function HomePage() {
   let stats: Stats | null = null;
   let news: Paginated<Article> | null = null;
-  let jobs: Paginated<Job> | null = null;
   let hacks: Paginated<Hackathon> | null = null;
   let error = false;
 
   try {
-    [stats, news, jobs, hacks] = await Promise.all([
+    [stats, news, hacks] = await Promise.all([
       apiGet<Stats>("/admin/stats"),
       apiGet<Paginated<Article>>("/news?limit=5"),
-      apiGet<Paginated<Job>>("/jobs?limit=5"),
       apiGet<Paginated<Hackathon>>("/hackathons?limit=5"),
     ]);
   } catch {
@@ -36,10 +34,9 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title="Dashboard" subtitle="Jobs, news, and hackathons at a glance" />
+      <PageHeader title="Dashboard" subtitle="News and hackathons at a glance" />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Jobs" value={stats?.total_jobs ?? 0} accent />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
         <StatCard label="Articles" value={stats?.total_articles ?? 0} />
         <StatCard label="Hackathons" value={stats?.total_hackathons ?? 0} />
         <StatCard label="Source Failures" value={stats?.failed_sources ?? 0} />
@@ -65,7 +62,7 @@ export default async function HomePage() {
         </Link>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-2">
         <FeedSection title="Latest News" href="/news" items={news?.items ?? []} render={(a: Article) => (
           <li key={a.id} className="border-b border-[var(--valorant-border)] py-2 last:border-0">
             <div className="flex gap-3">
@@ -80,12 +77,6 @@ export default async function HomePage() {
                 </div>
               </div>
             </div>
-          </li>
-        )} />
-        <FeedSection title="Latest Jobs" href="/jobs" items={jobs?.items ?? []} render={(j: Job) => (
-          <li key={j.id} className="border-b border-[var(--valorant-border)] py-2 last:border-0">
-            <p className="text-sm font-medium text-white">{j.title}</p>
-            <p className="text-xs text-[var(--valorant-muted)]">{j.company} · {j.location ?? "Remote"}</p>
           </li>
         )} />
         <FeedSection title="Hackathons" href="/hackathons" items={hacks?.items ?? []} render={(h: Hackathon) => (

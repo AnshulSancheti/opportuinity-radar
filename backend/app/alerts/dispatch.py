@@ -40,19 +40,6 @@ def dispatch_alerts(db: Session) -> int:
                 "summary": article.summary,
             },
         })
-    for job in db.scalars(select(Job).where(Job.status == "active").order_by(Job.created_at.desc()).limit(50)).all():
-        candidates.append({
-            "module": "jobs",
-            "item_type": "job",
-            "item_id": job.id,
-            "fields": {
-                "title": job.title,
-                "company": job.company,
-                "location": job.location,
-                "skills": ", ".join(job.skills),
-                "url": job.apply_url,
-            },
-        })
     for hack in db.scalars(select(Hackathon).where(Hackathon.status == "active").order_by(Hackathon.created_at.desc()).limit(50)).all():
         candidates.append({
             "module": "hackathons",

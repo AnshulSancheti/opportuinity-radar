@@ -141,7 +141,6 @@ class ScrapeRunResponse(BaseModel):
 
 
 class StatsResponse(BaseModel):
-    total_jobs: int
     total_articles: int
     total_hackathons: int
     last_scrape_at: datetime | None
@@ -150,7 +149,7 @@ class StatsResponse(BaseModel):
 
 
 class ScraperRunRequest(BaseModel):
-    module: Literal["news", "jobs", "hackathons"]
+    module: Literal["news", "hackathons"]
 
 
 class ScraperRunResponse(BaseModel):
