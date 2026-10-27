@@ -1,100 +1,39 @@
-# Opportunity Radar — Implementation Progress
+# Opportunity Radar — current implementation
 
-> Living tracker aligned with the corrected implementation plan. 
-**Started:** 2026-07-05  
-**Last updated:** 2026-07-05 
-**Current milestone:** M8 — Complete (Valorant UI + expanded scrapers)
+Updated: 27 October 2026.
 
----
+## Active scope
 
-## Milestone overview
+News and hackathon discovery, account registration/sign-in/sign-out, private saved articles and hackathons, and personal hackathon application tracking.
 
-| Milestone | Name | Status | Notes |
-|-----------|------|--------|-------|
-| M0 | Project Scaffold | ✅ Done | Health, Docker, Postgres |
-| M1 | Data Layer | ✅ Done | Models, Alembic, CRUD APIs |
-| M2 | Scraper Foundation | ✅ Done | BaseScraper, cleaner, CLI runner |
-| M3 | News Pipeline | ✅ Done | RSS + HN, categorizer, `/news` |
-| M4 | Jobs Pipeline | ✅ Done | Greenhouse + Lever, skills, `/jobs` |
-| M5 | Hackathons Pipeline | ✅ Done | static_list + MLH attempt, `/hackathons` |
-| M6 | Product Layer | ✅ Done | Actions, dashboard, alerts API |
-| M7 | Quality & Maintenance | ✅ Done | Cleanup, unit tests (5 passing) |
-| M8 | Deployment & Operations | ✅ Done | Docker Compose, admin auth, backup script |
+Jobs and matching are removed from active navigation, API routes, scraper selection, source configuration, and dashboard. Existing job records and earlier source modules remain preserved. Alerts are not exposed.
 
----
+## Account and collection implementation
 
-## MVP tracker
+- PostgreSQL accounts, hashed passwords, and revocable sessions (migration 005).
+- Seven-day HttpOnly session cookies, Secure in production, SameSite=Lax.
+- Database-backed authentication throttling and browser origin checks.
+- Account-scoped actions; anonymous legacy records remain unclaimed.
+- Save/unsave articles and hackathons; mark applied/undo for hackathons.
+- Saved and Applied collections include titles, source/organizer, external links, dates, and action controls.
+- Action status, loading, failures, sign-in prompts, and collection empty states.
 
-| MVP | Scope | Status |
-|-----|-------|--------|
-| MVP 1 | News pipeline + `/news` | ✅ Done — 60 articles |
-| MVP 2 | Jobs pipeline + `/jobs` | ✅ Done — 590 jobs |
-| MVP 3 | Hackathons + `/hackathons` | ✅ Done — 3 events (static_list) |
-| MVP 4 | Search, alerts, Docker prod | ✅ Done — ILIKE search, Telegram ready |
+## Remaining delivery work
 
----
+- Public HTTPS deployment and evaluator access.
+- Fresh news ingestion. Hackathon discovery now uses live sources and filters expired/stale events.
+- Demo recording and submission details.
+- Email verification/password-reset flows, if required by the intended deployment.
+- Automatic news scheduling remains outside the current implementation. Hackathons refresh automatically every six hours while the API runs.
 
-## Verified data (2026-07-05)
+README describes local setup, architecture, configuration, workflows, and validation commands. Tests cover account ownership and session behavior without retaining test accounts in the database.
 
-| Metric | Count |
-|--------|------:|
-| Articles | 60 |
-| Jobs | 590 |
-| Hackathons | 3 |
-| Scrape runs logged | Yes |
+## Live hackathon discovery
 
----
-
-## Pre-flight checklist
-
-- [x] Synthetic HN URLs for text posts
-- [x] Greenhouse list-only ingest (detail fetch removed — too slow)
-- [x] Batch-only alert dispatch (`app.alerts.dispatch`)
-- [x] `sources.yaml` config file
-- [x] Orphaned `scrape_runs` cleanup (>2h running → failed)
-- [x] Worker shares Python package + DB layer with backend
-
----
-
-## How to run
-
-```bash
-# Start backend + database
-docker compose up -d postgres backend
-
-# Run scrapers
-docker compose exec backend python -m app.scrapers.runner --module news
-docker compose exec backend python -m app.scrapers.runner --module jobs
-docker compose exec backend python -m app.scrapers.runner --module hackathons
-
-# Frontend (local dev)
-cd frontend && npm install && npm run dev
-
-# Tests
-cd backend && python -m pytest tests/ -v
-
-# Cleanup
-docker compose exec backend python -m app.maintenance.cleanup
-```
-
----
-
-## Session log
-
-| Date | Stage | Summary |
-|------|-------|---------|
-| 2026-07-05 | M0.1–M0.3 | Repo, FastAPI health, Docker Compose + Postgres |
-| 2026-07-05 | M1–M2 | Models, Alembic, BaseScraper, cleaner, runner |
-| 2026-07-05 | M3 | RSS + HN scrapers, news API, `/news` page |
-| 2026-07-05 | M4 | Greenhouse + Lever jobs, skills, `/jobs` page |
-| 2026-07-05 | M5 | Hackathons (static_list), `/hackathons` page |
-| 2026-07-05 | M6–M8 | Dashboard, actions, alerts, admin, tests, cleanup |
-
----
-
-## Known limitations
-
-- MLH scraper returns 0 (JS-heavy page) — `static_list` used as fallback
-- Netflix Lever board returned 0 jobs — Plaid configured as replacement
-- Telegram alerts require `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` in `.env`
-- `pg_trgm` fuzzy search deferred — ILIKE filters work for MVP
+- MLH redirects to its new season page; reads published event JSON with exact start/end timestamps.
+- Devpost public open/upcoming listings are paginated; submission-date ranges and single closing dates are supported.
+- Provider identities drive updates, including corrected titles, dates, locations, prizes, and status.
+- Seed entries are unverified and excluded; distinct editions sharing a URL retain separate records.
+- Discovery excludes ended, registration-closed, stale (>48 hours), and source-withdrawn events.
+- Source labels, source links, last fetch time, and refresh status are visible.
+- Saved/applied history survives expiration, retirement, and source removal.
