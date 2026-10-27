@@ -11,7 +11,7 @@ import { ErrorState } from "@/components/States";
 
 const MODULES = [
   { id: "news", label: "News", hint: "RSS, HN, Dev.to" },
-  { id: "hackathons", label: "Hackathons", hint: "Curated + MLH" },
+  { id: "hackathons", label: "Hackathons", hint: "Live MLH + Devpost listings" },
 ] as const;
 
 export default function AdminPage() {

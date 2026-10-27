@@ -78,7 +78,11 @@ class HackathonResponse(BaseModel):
     description: str | None
     status: str
     first_seen_at: datetime
+    last_seen_at: datetime
+    application_status: str | None
 
+
+# Provider check time and availability are returned with each event.
 
 class UserActionCreate(BaseModel):
     item_type: str

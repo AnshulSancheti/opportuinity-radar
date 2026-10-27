@@ -1,3 +1,5 @@
+import asyncio
+from contextlib import asynccontextmanager, suppress
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,7 +9,19 @@ from app.config import get_settings
 
 settings = get_settings()
 
+@asynccontextmanager
+async def lifespan(app):
+    from app.services.hackathon_refresh import refresh_loop
+    task = asyncio.create_task(refresh_loop()) if settings.hackathon_auto_refresh else None
+    yield
+    if task:
+        task.cancel()
+        with suppress(asyncio.CancelledError):
+            await task
+
+
 app = FastAPI(
+    lifespan=lifespan,
     title="Opportunity Radar",
     description="News and hackathons with private saved collections",
     version="0.1.0",

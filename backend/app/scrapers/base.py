@@ -41,7 +41,7 @@ class BaseScraper(ABC):
         for attempt in range(self.max_retries):
             self._rate_limit()
             try:
-                with httpx.Client(timeout=self.timeout_seconds, headers={"User-Agent": self.user_agent}) as client:
+                with httpx.Client(follow_redirects=True, timeout=self.timeout_seconds, headers={"User-Agent": self.user_agent}) as client:
                     response = client.get(url)
                     response.raise_for_status()
                     return response

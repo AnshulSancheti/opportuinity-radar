@@ -1,61 +1,44 @@
-import re
-
+"""Read MLH's published event JSON; never infer fields from unrelated card text."""
+import json
 from bs4 import BeautifulSoup
-from sqlalchemy.orm import Session
-
 from app.scrapers.base import BaseScraper
 from app.services.hackathon_service import upsert_hackathon
 from app.services.date_parser import parse_date
 
 
-def infer_hackathon_mode(text: str) -> str:
-    t = text.lower()
-    if any(k in t for k in ("online", "digital", "virtual")):
-        return "online"
-    if "hybrid" in t:
-        return "hybrid"
-    return "offline"
+def parse_mlh_page(html: str) -> list[dict]:
+    soup = BeautifulSoup(html, "lxml")
+    script = soup.select_one('script[data-page="app"][type="application/json"]')
+    if script is None:
+        raise ValueError("MLH event data not found; source layout may have changed")
+    data = json.loads(script.string or script.get_text())
+    events = data.get("props", {}).get("upcomingEvents")
+    if not isinstance(events, list) or not events:
+        raise ValueError("MLH returned no structured upcoming events")
+    items = []
+    for event in events:
+        start, end = parse_date(event.get("startsAt")), parse_date(event.get("endsAt"))
+        url = event.get("websiteUrl")
+        if not event.get("id") or not event.get("name") or not start or not end or not url or not url.startswith(("https://", "http://")):
+            raise ValueError("MLH event is missing its identity, dates, or website")
+        venue = event.get("venueAddress") or {}
+        location = ", ".join(dict.fromkeys(v for v in (venue.get("city"), venue.get("state"), venue.get("country")) if v)) or event.get("location")
+        items.append({
+            "source_event_id": str(event["id"]), "name": event["name"],
+            "url": url, "source_name": "mlh", "start_date": start, "end_date": end,
+            "mode": {"physical": "offline", "digital": "online", "virtual": "online", "online": "online", "hybrid": "hybrid"}.get(event.get("formatType")),
+            "location": location, "themes": [],
+        })
+    return items
 
 
 class MLHScraper(BaseScraper):
     source_name = "mlh"
     module = "hackathons"
-
     EVENTS_URL = "https://mlh.io/events"
 
-    def fetch(self) -> list[dict]:
-        response = self.fetch_url(self.EVENTS_URL)
-        soup = BeautifulSoup(response.text, "lxml")
-        items = []
-        for card in soup.select("[class*='event'], .event-card, article"):
-            link = card.find("a", href=True)
-            if not link:
-                continue
-            name = link.get_text(strip=True) or card.get_text(strip=True)[:100]
-            if not name or len(name) < 3:
-                continue
-            href = link["href"]
-            url = href if href.startswith("http") else f"https://mlh.io{href}"
-            date_text = card.get_text(" ", strip=True)
-            start_date = None
-            date_match = re.search(r"([A-Z][a-z]{2}\s+\d{1,2},?\s+\d{4})", date_text)
-            if date_match:
-                start_date = parse_date(date_match.group(1))
-            location = None
-            loc_match = re.search(r"([A-Z][a-z]+(?:,\s*[A-Z]{2})?(?:,\s*[A-Za-z ]+)?)", date_text)
-            if loc_match and len(loc_match.group(1)) < 60:
-                location = loc_match.group(1)
-            items.append({
-                "name": name,
-                "organizer": "MLH",
-                "url": url,
-                "source_name": self.source_name,
-                "mode": infer_hackathon_mode(date_text),
-                "location": location,
-                "start_date": start_date,
-                "description": date_text[:500],
-            })
-        return items[:20]
+    def fetch(self):
+        return parse_mlh_page(self.fetch_url(self.EVENTS_URL).text)
 
-    def save_item(self, item: dict) -> str:
+    def save_item(self, item):
         return upsert_hackathon(self.db, item)

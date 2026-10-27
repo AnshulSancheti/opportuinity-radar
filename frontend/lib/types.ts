@@ -33,6 +33,8 @@ export interface Hackathon {
   prize_text: string | null;
   themes: string[];
   status: string;
+  last_seen_at: string;
+  application_status: string | null;
 }
 
 export interface Stats {

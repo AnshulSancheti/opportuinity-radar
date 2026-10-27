@@ -6,7 +6,8 @@ from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
 from app.scrapers.hackathons.mlh import MLHScraper
-from app.scrapers.hackathons.static_list import StaticListScraper
+from app.scrapers.hackathons.devpost import DevpostScraper
+from app.services.hackathon_service import reconcile_hackathon_source
 from app.scrapers.news.devto import DevToScraper
 from app.scrapers.news.hacker_news import HackerNewsScraper
 from app.scrapers.news.rss import RSSScraper
@@ -40,13 +41,15 @@ def run_module(db: Session, module: str, source: str | None = None) -> None:
         if hacks_cfg.get("mlh", {}).get("enabled", True):
             if source in (None, "mlh"):
                 scrapers.append(MLHScraper(db))
-        if hacks_cfg.get("static_list", {}).get("enabled", True):
-            if source in (None, "static_list"):
-                scrapers.append(StaticListScraper(db))
+        if hacks_cfg.get("devpost", {}).get("enabled", True):
+            if source in (None, "devpost"):
+                scrapers.append(DevpostScraper(db))
 
     for scraper in scrapers:
         print(f"Running {scraper.source_name}...")
         run = scraper.run()
+        if module == "hackathons" and run.status == "success" and run.items_found:
+            reconcile_hackathon_source(db, scraper.source_name, run.started_at)
         print(f"  {run.status}: found={run.items_found} inserted={run.items_inserted} updated={run.items_updated}")
 
 

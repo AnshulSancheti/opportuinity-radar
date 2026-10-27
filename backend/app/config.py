@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     scraper_default_timeout_seconds: int = 20
     scraper_default_max_retries: int = 3
 
+    hackathon_auto_refresh: bool = True
+    hackathon_refresh_hours: int = 6
+
     admin_password: str = "change-me"
     telegram_bot_token: str = ""
     telegram_chat_id: str = ""

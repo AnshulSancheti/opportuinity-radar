@@ -30,5 +30,5 @@ news:
 hackathons:
   mlh:
     enabled: true
-  static_list:
+  devpost:
     enabled: true

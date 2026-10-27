@@ -68,7 +68,7 @@ class Hackathon(Base):
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(Text, nullable=False)
     organizer: Mapped[str | None] = mapped_column(Text)
-    url: Mapped[str | None] = mapped_column(Text, unique=True)
+    url: Mapped[str | None] = mapped_column(Text)
     canonical_url: Mapped[str | None] = mapped_column(Text)
     source_name: Mapped[str] = mapped_column(Text, nullable=False)
     mode: Mapped[str | None] = mapped_column(Text)

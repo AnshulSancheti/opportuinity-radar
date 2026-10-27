@@ -6,6 +6,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.auth import current_account
+from app.services.hackathon_service import discoverable_hackathons
 from app.config import get_settings
 from app.database import get_db
 from app.models import Article, Hackathon, Job, ScrapeRun, Source, UserAction
@@ -43,7 +44,7 @@ def get_stats(db: Session = Depends(get_db)) -> StatsResponse:
     return StatsResponse(
         total_articles=db.scalar(select(func.count(Article.id))) or 0,
         total_hackathons=db.scalar(
-            select(func.count(Hackathon.id)).where(Hackathon.status == "active")
+            select(func.count(Hackathon.id)).where(discoverable_hackathons())
         ) or 0,
         last_scrape_at=last_run,
         failed_sources=failed,
