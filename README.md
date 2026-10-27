@@ -2,7 +2,7 @@
 
 A news and hackathon discovery app with accounts, private saved collections, and a hackathon application tracker.
 
-**Production:** https://hackathons.intelligentape.online
+**Production:** https://hackathons.intelligentape.online \n
 **Demo Video:** https://drive.google.com/file/d/1QvEa_ycDM1WZeyGxxfvVoJ_-OYJAV1LF/view?usp=sharing
 
 The production runtime is Cloudflare Workers + D1 + Queues + Cron Triggers. The Python/PostgreSQL backend remains available locally as the reference implementation and migration source.
